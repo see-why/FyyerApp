@@ -197,8 +197,6 @@ def create_venue_form():
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
   # TODO: insert form data as a new Venue record in the db, instead
-  error = False
-  body = {}
   try:
     form = VenueForm()
     
@@ -217,7 +215,6 @@ def create_venue_submission():
   # TODO: on unsuccessful db insert, flash an error instead.
   # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
   # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
-    error = True
     db.session.rollback()
     flash('An error occured Venue ' + request.form['name'] + ' was not successfully listed!')
     print(sys.exc_info())
@@ -411,12 +408,29 @@ def create_artist_form():
 def create_artist_submission():
   # called upon submitting the new artist listing form
   # TODO: insert form data as a new Venue record in the db, instead
-  # TODO: modify data to be the data object returned from db insertion
+  try:
+    form = ArtistForm()
+    
+    genres = ",".join(form.genres.data)
 
-  # on successful db insert, flash success
-  flash('Artist ' + request.form['name'] + ' was successfully listed!')
-  # TODO: on unsuccessful db insert, flash an error instead.
-  # e.g., flash('An error occurred. Artist ' + data.name + ' could not be listed.')
+    artist = Artist(name=form.name.data, city=form.city.data, state=form.state.data, phone=form.phone.data, genres=genres,
+    image_link=form.image_link.data, facebook_link=form.facebook_link.data, website_link=form.website_link.data, is_venue_seeking=form.seeking_venue.data,
+    venue_seeking_description=form.seeking_description.data)
+    
+    db.session.add(artist) 
+    db.session.commit()
+
+     # on successful db insert, flash success
+    flash('Artist ' + request.form['name'] + ' was successfully listed!')
+  except:    
+    # TODO: on unsuccessful db insert, flash an error instead.
+    # e.g., flash('An error occurred. Artist ' + data.name + ' could not be listed.')
+    db.session.rollback()
+    flash('An error occured Artist ' + request.form['name'] + ' was not successfully listed!')
+    print(sys.exc_info())
+  finally:
+    db.session.close()
+ 
   return render_template('pages/home.html')
 
 
