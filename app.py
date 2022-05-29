@@ -3,9 +3,10 @@
 #----------------------------------------------------------------------------#
 
 import json
+import sys
 import dateutil.parser
 import babel
-from flask import Flask, render_template, request, Response, flash, redirect, url_for
+from flask import Flask, jsonify, render_template, request, Response, flash, redirect, url_for
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -196,13 +197,33 @@ def create_venue_form():
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
   # TODO: insert form data as a new Venue record in the db, instead
-  # TODO: modify data to be the data object returned from db insertion
+  error = False
+  body = {}
+  try:
+    form = VenueForm()
+    
+    genres = ",".join(form.genres.data)
 
-  # on successful db insert, flash success
-  flash('Venue ' + request.form['name'] + ' was successfully listed!')
+    venue = Venue(name=form.name.data, city=form.city.data, state=form.state.data, address=form.address.data, phone=form.phone.data, genres=genres,
+    image_link=form.image_link.data, facebook_link=form.facebook_link.data, website_link=form.website_link.data, is_talent_seeking=form.seeking_talent.data,
+    talent_seeking_description=form.seeking_description.data)
+    
+    db.session.add(venue) 
+    db.session.commit()
+
+     # on successful db insert, flash success
+    flash('Venue ' + request.form['name'] + ' was successfully listed!')
+  except:    
   # TODO: on unsuccessful db insert, flash an error instead.
   # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
   # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
+    error = True
+    db.session.rollback()
+    flash('An error occured Venue ' + request.form['name'] + ' was not successfully listed!')
+    print(sys.exc_info())
+  finally:
+    db.session.close()
+    # TODO: modify data to be the data object returned from db insertion
   return render_template('pages/home.html')
 
 @app.route('/venues/<venue_id>', methods=['DELETE'])
