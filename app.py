@@ -15,6 +15,7 @@ from logging import Formatter, FileHandler
 from flask_wtf import Form
 from forms import *
 from model import db, show_items, Venue, Artist
+import psycopg2
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
@@ -502,13 +503,35 @@ def create_shows():
 def create_show_submission():
   # called to create new shows in the db, upon submitting new show listing form
   # TODO: insert form data as a new Show record in the db, instead
+   try:
+      form = ShowForm()
 
-  # on successful db insert, flash success
-  flash('Show was successfully listed!')
-  # TODO: on unsuccessful db insert, flash an error instead.
-  # e.g., flash('An error occurred. Show could not be listed.')
-  # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
-  return render_template('pages/home.html')
+      venue_id=form.venue_id.data
+      artist_id=form.artist_id.data
+      start_time = form.start_time.data
+
+      connection = psycopg2.connect(app.config['SQLALCHEMY_DATABASE_URI'])
+      cursor = connection.cursor()
+
+      cursor.execute(f''' 
+      insert into show_items(artist_id, venue_id, start_time)
+      values({artist_id}, {venue_id}, '{start_time}')
+      ''')
+
+      connection.commit()     
+
+      # on successful db insert, flash success
+      flash('Show was successfully listed!')
+   except:    
+    # TODO: on unsuccessful db insert, flash an error instead.
+    # e.g., flash('An error occurred. Show could not be listed.')
+    # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
+      flash('An error occured Show was not successfully listed!')
+      print(sys.exc_info())
+   finally:
+       connection.close()
+
+   return render_template('pages/home.html')
 
 @app.errorhandler(404)
 def not_found_error(error):
