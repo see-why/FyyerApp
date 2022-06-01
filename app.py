@@ -16,6 +16,7 @@ from flask_wtf import Form
 from forms import *
 from model import db, show_items, Venue, Artist
 import psycopg2
+from datetime import date
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
@@ -65,27 +66,39 @@ def index():
 def venues():
   # TODO: replace with real venues data.
   #       num_upcoming_shows should be aggregated based on number of upcoming shows per venue.
-  data=[{
-    "city": "San Francisco",
-    "state": "CA",
-    "venues": [{
-      "id": 1,
-      "name": "The Musical Hop",
-      "num_upcoming_shows": 0,
-    }, {
-      "id": 3,
-      "name": "Park Square Live Music & Coffee",
-      "num_upcoming_shows": 1,
-    }]
-  }, {
-    "city": "New York",
-    "state": "NY",
-    "venues": [{
-      "id": 2,
-      "name": "The Dueling Pianos Bar",
-      "num_upcoming_shows": 0,
-    }]
-  }]
+  try:
+    connection = psycopg2.connect(app.config['SQLALCHEMY_DATABASE_URI'])
+    cursor = connection.cursor()
+
+    cursor.execute(f''' 
+      select v.city, v.state, v.name, v.id, count(v.id)
+      from "Venues" v join show_items s on v.id = s.venue_id where s.start_time >= '{date.today()}'
+      group by v.city, v.state, v.name, v.id
+      ''')
+
+    venues_data = cursor.fetchall()
+    
+    data = []
+    results = {}
+
+    for city, state, name, id, show_count in venues_data:
+      location = (city, state)
+      if location not in results:
+        results[location] = []
+      results[location].append({"id": id, "name": name, "num_upcoming_shows": show_count})    
+
+    for key, value in results.items():
+      data.append(
+        {"city" : key[0],
+          "state" : key[1],
+          "venues": [{ "id": show['id'], "name": show['name'] , "num_upcoming_shows": show['num_upcoming_shows']} for show in value]
+      })
+  except:
+    flash('An error occured venues was not successfully listed!')
+    print(sys.exc_info())
+  finally:
+       connection.close()
+
   return render_template('pages/venues.html', areas=data);
 
 @app.route('/venues/search', methods=['POST'])
