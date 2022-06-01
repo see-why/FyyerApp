@@ -1,6 +1,17 @@
 {% extends 'layouts/main.html' %}
 {% block title %}Fyyur | Shows{% endblock %}
 {% block content %}
+{% if shows == [] %}
+<ul  class="items">
+    <li>
+        <a href="/shows/create">
+            <div class="item">
+                <p>Add new shows.</p>
+            </div>				
+        </a>
+    </li>	
+</ul>	
+{% endif %}
 <div class="row shows">
     {%for show in shows %}
     <div class="col-sm-4">
