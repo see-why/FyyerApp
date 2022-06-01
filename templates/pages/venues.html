@@ -13,7 +13,16 @@
 				</div>
 			</a>
 		</li>
-		{% endfor %}
+		{% endfor %}		
 	</ul>
 {% endfor %}
+{% if len(areas) == 0 %}
+	<ul class="items">
+		<li>
+			<a href="/venues/create">
+				<p>Add new venues.</p>
+			</a>
+		</li>>
+	</ul>    		
+{% endif %}
 {% endblock %}
