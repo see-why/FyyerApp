@@ -75,7 +75,7 @@ def venues():
 
     cursor.execute(f''' 
       select v.city, v.state, v.name, v.id, count(v.id)
-      from "Venues" v join show_items s on v.id = s.venue_id 
+      from "Venues" v left join show_items s on v.id = s.venue_id 
       group by v.city, v.state, v.name, v.id
       ''')
 
@@ -89,13 +89,12 @@ def venues():
       if location not in results:
         results[location] = []
       results[location].append({"id": id, "name": name, "num_upcoming_shows": show_count})    
-
     for key, value in results.items():
       data.append(
         {"city" : key[0],
           "state" : key[1],
           "venues": [{ "id": show['id'], "name": show['name'] , "num_upcoming_shows": show['num_upcoming_shows']} for show in value]
-      })
+    })
   except:
     flash('An error occured venues was not successfully listed!')
     print(sys.exc_info())
@@ -163,6 +162,9 @@ def show_venue(venue_id):
   # shows the venue page with the given venue_id
   # TODO: replace with real venue data from the venues table, using venue_id
   try:
+    connection = psycopg2.connect(app.config['SQLALCHEMY_DATABASE_URI'])
+    cursor = connection.cursor()
+    data = {}
     venue = Venue.query.get(venue_id)
 
     data = {
@@ -179,9 +181,6 @@ def show_venue(venue_id):
     "seeking_description": venue.talent_seeking_description,
     "image_link": venue.image_link
     }
-
-    connection = psycopg2.connect(app.config['SQLALCHEMY_DATABASE_URI'])
-    cursor = connection.cursor()
 
     cursor.execute(f''' 
       select a.id, a.name, a.image_link, s.start_time
@@ -240,20 +239,20 @@ def create_venue_submission():
     db.session.commit()
 
      # on successful db insert, flash success
-    flash('Venue ' + request.form['name'] + ' was successfully listed!')
+    flash('Venue ' + request.form['name'] + ' was successfully created!')
   except:    
   # TODO: on unsuccessful db insert, flash an error instead.
   # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
   # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
     db.session.rollback()
-    flash('An error occured Venue ' + request.form['name'] + ' was not successfully listed!')
+    flash('An error occured Venue ' + request.form['name'] + ' was not successfully created!')
     print(sys.exc_info())
   finally:
     db.session.close()
     # TODO: modify data to be the data object returned from db insertion
   return render_template('pages/home.html')
 
-@app.route('/venues/<venue_id>/delete', methods=['DELETE'])
+@app.route('/venues/<venue_id>', methods=['DELETE'])
 def delete_venue(venue_id):
   # TODO: Complete this endpoint for taking a venue_id, and using
   # SQLAlchemy ORM to delete a record. Handle cases where the session commit could fail.
@@ -416,27 +415,21 @@ def edit_venue(venue_id):
   form = VenueForm()
   try:
       venue = Venue.query.get(venue_id)
-      venue={
-       "id": venue.id,
-       "name": venue.name,
-       "genres": venue.genres.split(','),
-       "address": venue.address,
-       "city": venue.city,
-       "state":  venue.state,
-       "phone": venue.phone,
-       "website": venue.website_link,
-       "facebook_link": venue.facebook_link,
-       "seeking_talent": venue.is_talent_seeking,
-       "seeking_description": venue.talent_seeking_description,
-       "image_link": venue.image_link
-      }
-      db.session.commit()
+
+      form.name.id = venue.name
+      form.genres.data = venue.genres.split(',')
+      form.address.data = venue.address
+      form.city.data = venue.city
+      form.state.data =  venue.state
+      form.phone.data = venue.phone
+      form.website_link.data = venue.website_link
+      form.facebook_link.data = venue.facebook_link
+      form.seeking_talent.data = venue.is_talent_seeking
+      form.seeking_description.data = venue.talent_seeking_description
+      form.image_link.data = venue.image_link
   except:
     flash(f'Venue: {venue_id} was not successfully loaded!')
     print(sys.exc_info())
-    db.session.rollback()
-  finally:
-    db.session.close()
   # TODO: populate form with values from venue with ID <venue_id>
   return render_template('forms/edit_venue.html', form=form, venue=venue)
 
