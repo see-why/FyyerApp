@@ -4,6 +4,7 @@
 
 import json
 import sys
+from wsgiref.handlers import format_date_time
 import dateutil.parser
 import babel
 from flask import Flask, jsonify, render_template, request, Response, flash, redirect, url_for
@@ -42,6 +43,7 @@ migrate = Migrate(app, db)
 
 def format_datetime(value, format='medium'):
   date = dateutil.parser.parse(value)
+  print('date',date)
   if format == 'full':
       format="EEEE MMMM, d, y 'at' h:mma"
   elif format == 'medium':
@@ -72,7 +74,7 @@ def venues():
 
     cursor.execute(f''' 
       select v.city, v.state, v.name, v.id, count(v.id)
-      from "Venues" v join show_items s on v.id = s.venue_id where s.start_time >= '{date.today()}'
+      from "Venues" v join show_items s on v.id = s.venue_id 
       group by v.city, v.state, v.name, v.id
       ''')
 
@@ -97,7 +99,7 @@ def venues():
     flash('An error occured venues was not successfully listed!')
     print(sys.exc_info())
   finally:
-       connection.close()
+    connection.close()
 
   return render_template('pages/venues.html', areas=data);
 
@@ -120,6 +122,59 @@ def search_venues():
 def show_venue(venue_id):
   # shows the venue page with the given venue_id
   # TODO: replace with real venue data from the venues table, using venue_id
+  try:
+    venue = Venue.query.get(venue_id)
+
+    data = {
+    "id": venue.id,
+    "name": venue.name,
+    "genres": venue.genres.split(','),
+    "address": venue.address,
+    "city": venue.city,
+    "state":  venue.state,
+    "phone": venue.phone,
+    "website": venue.website_link,
+    "facebook_link": venue.facebook_link,
+    "seeking_talent": venue.is_talent_seeking,
+    "seeking_description": venue.talent_seeking_description,
+    "image_link": venue.image_link
+    }
+
+    connection = psycopg2.connect(app.config['SQLALCHEMY_DATABASE_URI'])
+    cursor = connection.cursor()
+
+    cursor.execute(f''' 
+      select a.id, a.name, a.image_link, s.start_time
+      from "Artists" a join show_items s on a.id = s.artist_id where s.venue_id = {venue_id} and s.start_time < '{date.today()}'    
+      ''')
+
+    past_shows = cursor.fetchall()
+    data['past_shows'] = [{ "artist_id": id,
+      "artist_name":  name,
+      "artist_image_link":  image_link,
+      "start_time": format_datetime(start_time, 'full')} for id, name, image_link, start_time in past_shows]
+    data['past_shows_count'] = len(data['past_shows'])    
+
+    cursor.execute(f''' 
+      select a.id, a.name, a.image_link, s.start_time
+      from "Artists" a join show_items s on a.id = s.artist_id where s.venue_id = {venue_id} and s.start_time >= '{date.today()}'     
+      ''')
+
+    upcoming_shows = cursor.fetchall()
+    print('upcoming_shows',upcoming_shows)
+    data['upcoming_shows'] = [{ "artist_id": id,
+      "artist_name":  name,
+      "artist_image_link":  image_link,
+      "start_time": format_datetime(start_time, 'full')} for id, name, image_link, start_time in upcoming_shows]
+    data['upcoming_shows_count'] = len(data['upcoming_shows'])
+    print('data',data)
+  except:
+    flash(f'Details for venue: {venue_id} was not successfully fetched!')
+    print(sys.exc_info())
+  finally:
+    connection.close()
+
+  """
   data1={
     "id": 1,
     "name": "The Musical Hop",
@@ -198,6 +253,7 @@ def show_venue(venue_id):
     "upcoming_shows_count": 1,
   }
   data = list(filter(lambda d: d['id'] == venue_id, [data1, data2, data3]))[0]
+"""
   return render_template('pages/show_venue.html', venue=data)
 
 #  Create Venue

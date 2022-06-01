@@ -7,7 +7,7 @@ db = SQLAlchemy()
 show_items = db.Table('show_items',
     db.Column('venue_id', db.Integer, db.ForeignKey('Venues.id'), primary_key=True),
     db.Column('artist_id', db.Integer, db.ForeignKey('Artists.id'), primary_key=True),
-    db.Column('start_time',db.DateTime)
+    db.Column('start_time',db.String())
 )
 
 class Venue(db.Model):
