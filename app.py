@@ -117,7 +117,7 @@ def search_venues():
     if count > 0:
 
       if count > 1:
-        list_of_ids = ",".join([item.id for item in venues])
+        list_of_ids = ",".join([str(item.id) for item in venues])
       elif count == 1:
         list_of_ids = str(venues[0].id)
 
@@ -131,14 +131,11 @@ def search_venues():
         ''')
 
       show_count = cursor.fetchall()
-      print('show_count',show_count)
 
       dict = {}
 
       for id, count in show_count:
         dict[id] = count
-
-      print('dict',dict)
 
       response = {
           "count": count,
@@ -299,15 +296,52 @@ def search_artists():
   # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
   # seach for "A" should return "Guns N Petals", "Matt Quevado", and "The Wild Sax Band".
   # search for "band" should return "The Wild Sax Band".
-  response={
-    "count": 1,
-    "data": [{
-      "id": 4,
-      "name": "Guns N Petals",
-      "num_upcoming_shows": 0,
-    }]
-  }
-  return render_template('pages/search_artists.html', results=response, search_term=request.form.get('search_term', ''))
+  try:
+    partial_name = request.form.get('search_term', '')
+    response = {}
+    artists = Artist.query.filter(Artist.name.ilike(f'%{partial_name}%')).all()
+    count = len(artists)
+
+    if count > 0:
+
+      if count > 1:
+        list_of_ids = ",".join([str(item.id) for item in artists])        
+      elif count == 1:
+        list_of_ids = str(artists[0].id)
+      
+
+      connection = psycopg2.connect(app.config['SQLALCHEMY_DATABASE_URI'])
+      cursor = connection.cursor()
+
+      cursor.execute(f''' 
+        select a.id, count(a.id)
+        from "Artists" a join show_items s on a.id = s.artist_id where s.artist_id in ({list_of_ids}) and s.start_time >= '{date.today()}' 
+        group by a.id
+        ''')
+
+      show_count = cursor.fetchall()
+
+      dict = {}
+
+      for id, count in show_count:
+        dict[id] = count
+
+      response = {
+          "count": count,
+          "data": [{
+          "id": item.id,
+          "name": item.name,
+          "num_upcoming_shows": dict[item.id] if item.id in dict else 0
+        } for item in artists]
+      }
+
+  except:
+    flash(f'An error occured could not search with {partial_name} was not successfully!')
+    print(sys.exc_info())
+  finally:
+    connection.close()
+
+  return render_template('pages/search_artists.html', results=response, search_term=partial_name)
 
 @app.route('/artists/<int:artist_id>')
 def show_artist(artist_id):
