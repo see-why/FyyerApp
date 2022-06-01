@@ -2,6 +2,15 @@
 {% block title %}Fyyur | Artists{% endblock %}
 {% block content %}
 <ul class="items">
+	{% if artists == [] %}
+		<li>
+			<a href="/artists/create">
+				<div class="item">
+					<p>Add new artists.</p>
+				</div>				
+			</a>
+		</li>		
+	{% endif %}
 	{% for artist in artists %}
 	<li>
 		<a href="/artists/{{ artist.id }}">
