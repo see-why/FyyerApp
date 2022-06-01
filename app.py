@@ -225,6 +225,11 @@ def create_venue_submission():
   # TODO: insert form data as a new Venue record in the db, instead
   try:
     form = VenueForm()
+
+    existing_venue = Venue.query.filter(Venue.name.ilike(f'%{form.name.data}%')).all()
+    if len(existing_venue) > 0:
+      flash('Venue ' + request.form['name'] + ' already exists!')
+      return render_template('forms/new_venue.html', form=form)
     
     genres = ",".join(form.genres.data)
 
@@ -433,6 +438,12 @@ def edit_artist_submission(artist_id):
   try:
     artist = Artist.query.get(artist_id)
 
+    existing_artist = Artist.query.filter(Artist.name.ilike(f'%{form.name.data}%')).all()
+    if len(existing_artist) > 0 and form.name.data.lower() != artist.name.lower():
+        print(form.name.data.lower(), artist.name.lower())
+        flash('Artist ' + request.form['name'] + ' already exists!')
+        return render_template('forms/edit_artist.html', form=form, artist=artist)
+
     artist.name = form.name.data 
     artist.city = form.city.data
     artist.state = form.state.data
@@ -486,6 +497,13 @@ def edit_venue_submission(venue_id):
   try:
       venue = Venue.query.get(venue_id)
       form = VenueForm()
+
+      existing_venue = Venue.query.filter(Venue.name.ilike(f'%{form.name.data}%')).all()
+      if len(existing_venue) > 0 and form.name.data.lower() != venue.name.lower():
+        print(form.name.data.lower(), venue.name.lower())
+        flash('Venue ' + request.form['name'] + ' already exists!')
+        return render_template('forms/edit_venue.html', form=form, venue=venue)
+
       genres = ",".join(form.genres.data)
 
       venue.name=form.name.data
@@ -525,6 +543,11 @@ def create_artist_submission():
   # TODO: insert form data as a new Venue record in the db, instead
   try:
     form = ArtistForm()
+
+    existing_artist = Artist.query.filter(Artist.name.ilike(f'%{form.name.data}%')).all()
+    if len(existing_artist) > 0:
+      flash('Artist ' + request.form['name'] + ' already exists!')
+      return render_template('forms/new_artist.html', form=form)
     
     genres = ",".join(form.genres.data)
 
