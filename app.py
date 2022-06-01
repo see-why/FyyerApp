@@ -253,7 +253,7 @@ def create_venue_submission():
     # TODO: modify data to be the data object returned from db insertion
   return render_template('pages/home.html')
 
-@app.route('/venues/<venue_id>', methods=['DELETE'])
+@app.route('/venues/<venue_id>/delete', methods=['DELETE'])
 def delete_venue(venue_id):
   # TODO: Complete this endpoint for taking a venue_id, and using
   # SQLAlchemy ORM to delete a record. Handle cases where the session commit could fail.
@@ -261,11 +261,14 @@ def delete_venue(venue_id):
     venue = Venue.query.get(venue_id)
     db.session.delete(venue)
     db.session.commit()
+    flash(f'Venue: {venue_id} was successfully deleted!')
   except:
+    flash(f'Venue: {venue_id} was not successfully deleted!')
+    print(sys.exc_info())
     db.session.rollback()
   finally:
     db.session.close()
-  return jsonify({'Success': True})
+  return render_template('pages/home.html')
   # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
   # clicking that button delete it from the db then redirect the user to the homepage
 
@@ -411,26 +414,60 @@ def edit_artist_submission(artist_id):
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
 def edit_venue(venue_id):
   form = VenueForm()
-  venue={
-    "id": 1,
-    "name": "The Musical Hop",
-    "genres": ["Jazz", "Reggae", "Swing", "Classical", "Folk"],
-    "address": "1015 Folsom Street",
-    "city": "San Francisco",
-    "state": "CA",
-    "phone": "123-123-1234",
-    "website": "https://www.themusicalhop.com",
-    "facebook_link": "https://www.facebook.com/TheMusicalHop",
-    "seeking_talent": True,
-    "seeking_description": "We are on the lookout for a local artist to play every two weeks. Please call us.",
-    "image_link": "https://images.unsplash.com/photo-1543900694-133f37abaaa5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=400&q=60"
-  }
+  try:
+      venue = Venue.query.get(venue_id)
+      venue={
+       "id": venue.id,
+       "name": venue.name,
+       "genres": venue.genres.split(','),
+       "address": venue.address,
+       "city": venue.city,
+       "state":  venue.state,
+       "phone": venue.phone,
+       "website": venue.website_link,
+       "facebook_link": venue.facebook_link,
+       "seeking_talent": venue.is_talent_seeking,
+       "seeking_description": venue.talent_seeking_description,
+       "image_link": venue.image_link
+      }
+      db.session.commit()
+  except:
+    flash(f'Venue: {venue_id} was not successfully loaded!')
+    print(sys.exc_info())
+    db.session.rollback()
+  finally:
+    db.session.close()
   # TODO: populate form with values from venue with ID <venue_id>
   return render_template('forms/edit_venue.html', form=form, venue=venue)
 
 @app.route('/venues/<int:venue_id>/edit', methods=['POST'])
 def edit_venue_submission(venue_id):
   # TODO: take values from the form submitted, and update existing
+  try:
+      venue = Venue.query.get(venue_id)
+      form = VenueForm()
+      genres = ",".join(form.genres.data)
+
+      venue.name=form.name.data
+      venue.city=form.city.data
+      venue.state=form.state.data
+      venue.address=form.address.data
+      venue.phone=form.phone.data
+      venue.genres=genres
+      venue.image_link=form.image_link.data
+      venue.facebook_link=form.facebook_link.data
+      venue.website_link=form.website_link.data
+      venue.is_talent_seeking=form.seeking_talent.data
+      venue.talent_seeking_description=form.seeking_description.data
+
+      db.session.commit()
+      flash(f'Venue: {venue_id} was successfully edited!')
+  except:
+     flash(f'Venue: {venue_id} was not successfully edited!')
+     print(sys.exc_info())
+     db.session.rollback()
+  finally:
+    db.session.close()
   # venue record with ID <venue_id> using the new attributes
   return redirect(url_for('show_venue', venue_id=venue_id))
 
@@ -479,6 +516,9 @@ def create_artist_submission():
 def shows():
   # displays list of shows at /shows
   # TODO: replace with real venues data.
+  data = []
+  
+
   data=[{
     "venue_id": 1,
     "venue_name": "The Musical Hop",
