@@ -78,6 +78,13 @@ def index():
   artists = Artist.query.order_by(desc(Artist.id)).limit(10).all()
   return render_template('pages/home.html', venues=venues, artists=artists)
 
+@app.errorhandler(401)
+def server_error(error):
+    return render_template('errors/401.html'), 401
+
+@app.errorhandler(403)
+def server_error(error):
+    return render_template('errors/403.html'), 403
 
 @app.errorhandler(404)
 def not_found_error(error):
