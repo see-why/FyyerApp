@@ -8,7 +8,16 @@ from tracemalloc import start
 from wsgiref.handlers import format_date_time
 import dateutil.parser
 import babel
-from flask import Flask, jsonify, render_template, request, Response, flash, redirect, url_for
+from flask import (
+  Flask, 
+  jsonify, 
+  render_template,
+  request,
+  Response,
+  flash,
+  redirect,
+  url_for
+)
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -61,8 +70,9 @@ app.jinja_env.filters['datetime'] = format_datetime
 
 @app.route('/')
 def index():
-    print(db.query(show_items).all())
-    return render_template('pages/home.html')
+  venues = Venue.query.order_by(desc(Venue.created_date)).limit(10).all()
+  artists = Artist.query.order_by(desc(Artist.created_date)).limit(10).all()
+  return render_template('pages/home.html', venues=venues, artists=artists)
 
 
 #  Venues
