@@ -2,8 +2,6 @@ from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
-# TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
-
 show_items = db.Table('show_items',
     db.Column('venue_id', db.Integer, db.ForeignKey('Venues.id'), primary_key=True),
     db.Column('artist_id', db.Integer, db.ForeignKey('Artists.id'), primary_key=True),
@@ -30,7 +28,6 @@ class Venue(db.Model):
     def __repr__(self):
         return f'Venue id: {self.id} name: {self.name} city: {self.city} state: {self.state}'
 
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
 class Artist(db.Model):
     __tablename__ = 'Artists'
@@ -49,5 +46,3 @@ class Artist(db.Model):
 
     def __repr__(self):
         return f'Artist id: {self.id} name: {self.name} city: {self.city} state: {self.state}'
-
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
