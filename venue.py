@@ -1,6 +1,6 @@
 from flask import (
     Blueprint,
-    jsonify, 
+    jsonify,
     render_template,
     request,
     flash,
@@ -18,6 +18,7 @@ venue_blueprint = Blueprint('venue_blueprint', __name__)
 
 #  Venues
 #  ----------------------------------------------------------------
+
 
 @venue_blueprint.route('/venues')
 def venues():
@@ -205,7 +206,8 @@ def create_venue_submission():
         # on successful db insert, flash success
         flash('Venue ' + request.form['name'] + ' was successfully created!')
     except BaseException:
-        # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/ for flash messages
+        # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/ for flash
+        # messages
         db.session.rollback()
         flash(
             'An error occured Venue ' +
@@ -215,7 +217,6 @@ def create_venue_submission():
     finally:
         db.session.close()
     return render_template('pages/home.html')
-
 
 
 @venue_blueprint.route('/venues/<venue_id>', methods=['DELETE'])
@@ -238,8 +239,6 @@ def delete_venue(venue_id):
 
 #  Update
 #  ----------------------------------------------------------------
-
-
 
 
 @venue_blueprint.route('/venues/<int:venue_id>/edit', methods=['GET'])

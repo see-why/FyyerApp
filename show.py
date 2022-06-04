@@ -1,6 +1,6 @@
 from flask import (
     Blueprint,
-    jsonify, 
+    jsonify,
     render_template,
     request,
     flash,
@@ -78,7 +78,8 @@ def create_shows():
 
 @show_blueprint.route('/shows/create', methods=['POST'])
 def create_show_submission():
-    # called to create new shows in the db, upon submitting new show listing form
+    # called to create new shows in the db, upon submitting new show listing
+    # form
     try:
         form = ShowForm()
 

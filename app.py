@@ -9,14 +9,14 @@ from wsgiref.handlers import format_date_time
 import dateutil.parser
 import babel
 from flask import (
-  Flask, 
-  jsonify, 
-  render_template,
-  request,
-  Response,
-  flash,
-  redirect,
-  url_for
+    Flask,
+    jsonify,
+    render_template,
+    request,
+    Response,
+    flash,
+    redirect,
+    url_for
 )
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
@@ -74,17 +74,20 @@ app.jinja_env.filters['datetime'] = format_datetime
 
 @app.route('/')
 def index():
-  venues = Venue.query.order_by(desc(Venue.id)).limit(10).all()
-  artists = Artist.query.order_by(desc(Artist.id)).limit(10).all()
-  return render_template('pages/home.html', venues=venues, artists=artists)
+    venues = Venue.query.order_by(desc(Venue.id)).limit(10).all()
+    artists = Artist.query.order_by(desc(Artist.id)).limit(10).all()
+    return render_template('pages/home.html', venues=venues, artists=artists)
+
 
 @app.errorhandler(401)
 def server_error(error):
     return render_template('errors/401.html'), 401
 
+
 @app.errorhandler(403)
 def server_error(error):
     return render_template('errors/403.html'), 403
+
 
 @app.errorhandler(404)
 def not_found_error(error):

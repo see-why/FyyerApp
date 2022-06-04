@@ -10,6 +10,6 @@ def validate_phone(field):
         input_number = phonenumbers.parse(field.data)
         if not (phonenumbers.is_valid_number(input_number)):
             raise ValidationErr('Invalid phone number')
-    except:
+    except BaseException:
         print(sys.exc_info())
         raise ValidationErr('Invalid phone number')

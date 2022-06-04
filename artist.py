@@ -1,6 +1,6 @@
 from flask import (
     Blueprint,
-    jsonify, 
+    jsonify,
     render_template,
     request,
     flash,
@@ -17,6 +17,8 @@ from config import DatabaseURI
 artist_blueprint = Blueprint('artist_blueprint', __name__)
 #  Artists
 #  ----------------------------------------------------------------
+
+
 @artist_blueprint.route('/artists')
 def artists():
     try:
@@ -148,6 +150,7 @@ def show_artist(artist_id):
 
     return render_template('pages/show_artist.html', artist=data)
 
+
 @artist_blueprint.route('/artists/<int:artist_id>/edit', methods=['GET'])
 def edit_artist(artist_id):
     form = ArtistForm()
@@ -209,7 +212,9 @@ def edit_artist_submission(artist_id):
 
     # artist record with ID <artist_id> using the new attributes
 
-    return redirect(url_for('artist_blueprint.show_artist', artist_id=artist_id))
+    return redirect(
+        url_for('artist_blueprint.show_artist', artist_id=artist_id))
+
 
 @artist_blueprint.route('/artists/create', methods=['GET'])
 def create_artist_form():
@@ -253,6 +258,7 @@ def create_artist_submission():
         db.session.close()
 
     return render_template('pages/home.html')
+
 
 @artist_blueprint.route('/artists/<artist_id>', methods=['DELETE'])
 def delete_artist(artist_id):

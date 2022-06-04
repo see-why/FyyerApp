@@ -15,7 +15,8 @@ SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:oyinlola@localhost:5432/fyyerAp
 
 class DatabaseURI:
 
-    # Just change the names of your database and crendtials and all to connect to your local system
+    # Just change the names of your database and crendtials and all to connect
+    # to your local system
     DATABASE_NAME = "fyyerApp"
     username = 'postgres'
     password = 'oyinlola'
