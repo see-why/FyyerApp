@@ -6,6 +6,10 @@
       {{ form.csrf_token }}
       <h3 class="form-heading">List a new artist</h3>
       <div class="form-group">
+        {% for error in form.name.errors %}
+          <small class="text-danger">{{ error }}</small>  
+          <br>
+        {% endfor %}
         <label for="name">Name</label>
         {{ form.name(class_ = 'form-control', autofocus = true) }}
       </div>
