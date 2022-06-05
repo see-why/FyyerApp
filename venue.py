@@ -8,7 +8,9 @@ from flask import (
     url_for
 )
 from datetime import date
-from model import Venue, db
+
+from sqlalchemy import func
+from model import Venue, db, Artist, Show
 import sys
 import psycopg2
 from forms import *
@@ -25,26 +27,20 @@ def venues():
     # num_upcoming_shows should be aggregated based on number of upcoming
     # shows per venue.
     try:
-        connection = psycopg2.connect(DatabaseURI.SQLALCHEMY_DATABASE_URI)
-        cursor = connection.cursor()
-
-        cursor.execute(f'''
-      select v.city, v.state, v.name, v.id, count(v.id)
-      from "Venues" v left join show_items s on v.id = s.venue_id
-      group by v.city, v.state, v.name, v.id
-      ''')
-
-        venues_data = cursor.fetchall()
-
+        
         data = []
         results = {}
 
-        for city, state, name, id, show_count in venues_data:
+        result = db.session.query(Venue.city, Venue.state, Venue.name, Venue.id, func.count(Venue.id)).outerjoin(Show, Venue.id == Show.venue_id).group_by(Venue.city, Venue.state, Venue.name,Venue.id).all()
+
+        for venues_data in result:
+            (city, state, name, id, show_count)  = venues_data
             location = (city, state)
             if location not in results:
                 results[location] = []
             results[location].append(
                 {"id": id, "name": name, "num_upcoming_shows": show_count})
+
         for key, value in results.items():
             data.append(
                 {"city": key[0],
@@ -54,8 +50,6 @@ def venues():
     except BaseException:
         flash('An error occured venues was not successfully listed!')
         print(sys.exc_info())
-    finally:
-        connection.close()
 
     return render_template('pages/venues.html', areas=data)
 
@@ -68,49 +62,28 @@ def search_venues():
     try:
         partial_name = request.form.get('search_term', '')
         response = {}
+        data = []
         venues = Venue.query.filter(
             Venue.name.ilike(f'%{partial_name}%')).all()
         count = len(venues)
 
-        if count > 0:
-
-            if count > 1:
-                list_of_ids = ",".join([str(item.id) for item in venues])
-            elif count == 1:
-                list_of_ids = str(venues[0].id)
-
-            connection = psycopg2.connect(
-                DatabaseURI.SQLALCHEMY_DATABASE_URI)
-            cursor = connection.cursor()
-
-            cursor.execute(f'''
-        select v.id, count(v.id)
-        from "Venues" v join show_items s on v.id = s.venue_id where s.venue_id in ({list_of_ids}) and s.start_time >= '{date.today()}'
-        group by v.id
-        ''')
-
-            show_count = cursor.fetchall()
-
-            dict = {}
-
-            for id, count in show_count:
-                dict[id] = count
+        if count > 0: 
+            for venue in venues:
+                data.append({
+                    "id": venue.id,
+                    "name": venue.name,
+                    "num_upcoming_shows": len(venue.shows)
+                })
 
             response = {
                 "count": count,
-                "data": [{
-                    "id": item.id,
-                    "name": item.name,
-                    "num_upcoming_shows": dict[item.id] if item.id in dict else 0
-                } for item in venues]
+                "data": data
             }
 
     except BaseException:
         flash(
             f'An error occured, could not search with {partial_name} was not successfully!')
         print(sys.exc_info())
-    finally:
-        connection.close()
 
     return render_template('pages/search_venues.html',
                            results=response, search_term=partial_name)
@@ -120,8 +93,6 @@ def search_venues():
 def show_venue(venue_id):
     # shows the venue page with the given venue_id
     try:
-        connection = psycopg2.connect(DatabaseURI.SQLALCHEMY_DATABASE_URI)
-        cursor = connection.cursor()
         data = {}
         venue = Venue.query.get(venue_id)
 
@@ -140,36 +111,36 @@ def show_venue(venue_id):
             "image_link": venue.image_link
         }
 
-        cursor.execute(f'''
-      select a.id, a.name, a.image_link, s.start_time
-      from "Artists" a join show_items s on a.id = s.artist_id where s.venue_id = {venue_id} and s.start_time < '{date.today()}'
-      ''')
-
-        past_shows = cursor.fetchall()
-        data['past_shows'] = [{"artist_id": id,
-                               "artist_name": name,
-                               "artist_image_link": image_link,
-                               "start_time": start_time} for id, name, image_link, start_time in past_shows]
+        upcoming_shows = []
+        past_shows = []
+        all_shows = db.session.query(Artist, Show).join(Show).filter(Show.venue_id == venue_id).all()
+        print('all_shows',all_shows)
+        
+        for artist, show in all_shows:
+            if datetime.date(show.start_time) >= date.today():
+                upcoming_shows.append({
+                    "artist_id": artist.id,
+                    "artist_name": artist.name,
+                    "artist_image_link": artist.image_link,
+                    "start_time": show.start_time
+                })
+            else:
+                past_shows.append({
+                    "artist_id": artist.id,
+                    "artist_name": artist.name,
+                    "artist_image_link": artist.image_link,
+                    "start_time": show.start_time
+                })
+        
+        data['past_shows'] = past_shows
         data['past_shows_count'] = len(data['past_shows'])
 
-        cursor.execute(f'''
-      select a.id, a.name, a.image_link, s.start_time
-      from "Artists" a join show_items s on a.id = s.artist_id where s.venue_id = {venue_id} and s.start_time >= '{date.today()}'
-      ''')
 
-        upcoming_shows = cursor.fetchall()
-        print('upcoming_shows', upcoming_shows)
-        data['upcoming_shows'] = [{"artist_id": id,
-                                   "artist_name": name,
-                                   "artist_image_link": image_link,
-                                   "start_time": start_time} for id, name, image_link, start_time in upcoming_shows]
+        data['upcoming_shows'] = upcoming_shows
         data['upcoming_shows_count'] = len(data['upcoming_shows'])
-        print('data', data)
     except BaseException:
         flash(f'Details for venue: {venue_id} was not successfully fetched!')
         print(sys.exc_info())
-    finally:
-        connection.close()
 
     return render_template('pages/show_venue.html', venue=data)
 
@@ -285,7 +256,6 @@ def edit_venue_submission(venue_id):
         existing_venue = Venue.query.filter(
             Venue.name.ilike(f'%{form.name.data}%')).all()
         if len(existing_venue) > 0 and form.name.data.lower() != venue.name.lower():
-            print(form.name.data.lower(), venue.name.lower())
             form.name.errors.append('Venue name ' + request.form['name'] + ' already exists!')
             return render_template(
                 'forms/edit_venue.html', form=form, venue=venue)
