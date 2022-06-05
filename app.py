@@ -32,6 +32,7 @@ from datetime import date
 from artist import artist_blueprint
 from venue import venue_blueprint
 from show import show_blueprint
+from flask_wtf.csrf import CSRFProtect
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
@@ -41,6 +42,8 @@ moment = Moment(app)
 app.config.from_object('config')
 
 db.init_app(app)
+csrf = CSRFProtect()
+csrf.init_app(app)
 
 migrate = Migrate(app, db)
 app.register_blueprint(artist_blueprint)
