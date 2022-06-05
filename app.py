@@ -26,7 +26,7 @@ import logging
 from logging import Formatter, FileHandler
 from flask_wtf import Form
 from forms import *
-from model import db, show_items, Venue, Artist
+from model import db, Show, Venue, Artist
 import psycopg2
 from datetime import date
 from artist import artist_blueprint
