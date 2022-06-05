@@ -1,15 +1,17 @@
-import sys
-from xml.dom import ValidationErr
-import phonenumbers
+import re
+from forms import *
+from wtforms.validators import ValidationError
 
 
-def validate_phone(field):
-    if len(field.data) != 10:
-        raise ValidationErr('Invalid phone number.')
-    try:
-        input_number = phonenumbers.parse(field.data)
-        if not (phonenumbers.is_valid_number(input_number)):
-            raise ValidationErr('Invalid phone number')
-    except BaseException:
-        print(sys.exc_info())
-        raise ValidationErr('Invalid phone number')
+def validate_phone(form, field):
+    print('field', field.data)
+    us_phone_num = '^([0-9]{3})[-][0-9]{3}[-][0-9]{4}$'
+    match = re.search(us_phone_num, field.data)
+    if not match:
+        raise ValidationError('Error, phone number must be in format xxx-xxx-xxxx')
+
+def validate_genres(form, field):
+    print('field', field.data)
+    if len(field.data) > 5:
+        raise ValidationError('You can only choose 5 genres max.')
+
