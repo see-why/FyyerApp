@@ -114,7 +114,6 @@ def show_venue(venue_id):
         upcoming_shows = []
         past_shows = []
         all_shows = db.session.query(Artist, Show).join(Show).filter(Show.venue_id == venue_id).all()
-        print('all_shows',all_shows)
         
         for artist, show in all_shows:
             if datetime.date(show.start_time) >= date.today():
