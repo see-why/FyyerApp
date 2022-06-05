@@ -10,7 +10,6 @@ from flask import (
 from datetime import date
 from model import Artist, db, Show, Venue
 import sys
-import psycopg2
 from forms import *
 from config import DatabaseURI
 
@@ -78,8 +77,6 @@ def search_artists():
 def show_artist(artist_id):
     # shows the artist page with the given artist_id
     try:
-        connection = psycopg2.connect(DatabaseURI.SQLALCHEMY_DATABASE_URI)
-        cursor = connection.cursor()
         data = {}
         artist = Artist.query.get(artist_id)
 
@@ -127,8 +124,6 @@ def show_artist(artist_id):
     except BaseException:
         flash(f'Details for venue: {artist_id} was not successfully fetched!')
         print(sys.exc_info())
-    finally:
-        connection.close()
 
     return render_template('pages/show_artist.html', artist=data)
 

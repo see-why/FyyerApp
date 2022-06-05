@@ -12,7 +12,6 @@ from datetime import date
 from sqlalchemy import func
 from model import Venue, db, Artist, Show
 import sys
-import psycopg2
 from forms import *
 from config import DatabaseURI
 
