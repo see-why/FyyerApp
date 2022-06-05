@@ -1,18 +1,13 @@
 from flask import (
     Blueprint,
-    jsonify,
     render_template,
-    request,
     flash,
     redirect,
     url_for
 )
-from datetime import date
-from model import Artist, db
+from model import Artist, db, Show, Venue
 import sys
-import psycopg2
 from forms import *
-from config import DatabaseURI
 from model import Artist, Venue
 
 show_blueprint = Blueprint('show_blueprint', __name__)
@@ -25,33 +20,23 @@ show_blueprint = Blueprint('show_blueprint', __name__)
 def shows():
     # displays list of shows at /shows
     try:
-        data = []
+        data = []     
 
-        connection = psycopg2.connect(DatabaseURI.SQLALCHEMY_DATABASE_URI)
-        cursor = connection.cursor()
+        stmt = db.session.query(Show, Venue, Artist).select_from(Show).join(Venue).join(Artist).all()
 
-        cursor.execute(f'''
-      select v.id, v.name, a.id, a.name, a.image_link, s.start_time
-      from show_items s join "Venues" v on  s.venue_id = v.id join "Artists" a on s.artist_id = a.id
-      ''')
-
-        show_data = cursor.fetchall()
-
-        data = [{
-            "venue_id": venue_id,
-            "venue_name": venue_name,
-            "artist_id": artist_id,
-            "artist_name": artist_name,
-            "artist_image_link": image_link,
-            "start_time": start_time
-        } for venue_id, venue_name, artist_id, artist_name, image_link, start_time in show_data]
-
-        print('data', data)
+        for show, venue, artist in stmt:
+           data.append({
+                "venue_id": venue.id,
+                "venue_name": venue.name,
+                "artist_id": artist.id,
+                "artist_name": artist.name,
+                "artist_image_link": artist.image_link,
+                "start_time": show.start_time
+           })
+        
     except BaseException:
         flash(f'An error occured, could not get all shows successfully!')
         print(sys.exc_info())
-    finally:
-        connection.close()
 
     return render_template('pages/shows.html', shows=data)
 
@@ -87,24 +72,20 @@ def create_show_submission():
         artist_id = form.artist_id.data
         start_time = form.start_time.data
 
-        connection = psycopg2.connect(DatabaseURI.SQLALCHEMY_DATABASE_URI)
-        cursor = connection.cursor()
+        show = Show(venue_id=venue_id, artist_id=artist_id, start_time=start_time)
 
-        cursor.execute(f'''
-      insert into show_items(artist_id, venue_id, start_time)
-      values({artist_id}, {venue_id}, '{start_time}')
-      ''')
-
-        connection.commit()
-
+        db.session.add(show)
+        db.session.commit()
         # on successful db insert, flash success
         flash('Show was successfully listed!')
     except BaseException:
         # e.g., flash('An error occurred. Show could not be listed.')
         # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
+        db.session.rollback()
         flash('An error occured Show was not successfully listed!')
         print(sys.exc_info())
     finally:
-        connection.close()
+        db.session.close()
 
-    return render_template('pages/home.html')
+    return redirect(
+        url_for('index'))
