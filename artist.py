@@ -8,7 +8,7 @@ from flask import (
     url_for
 )
 from datetime import date
-from model import Artist, db
+from model import Artist, db, Show,  Venue
 import sys
 import psycopg2
 from forms import *
@@ -46,49 +46,29 @@ def search_artists():
     try:
         partial_name = request.form.get('search_term', '')
         response = {}
+        data = []
         artists = Artist.query.filter(
             Artist.name.ilike(f'%{partial_name}%')).all()
         count = len(artists)
 
         if count > 0:
 
-            if count > 1:
-                list_of_ids = ",".join([str(item.id) for item in artists])
-            elif count == 1:
-                list_of_ids = str(artists[0].id)
-
-            connection = psycopg2.connect(
-                DatabaseURI.SQLALCHEMY_DATABASE_URI)
-            cursor = connection.cursor()
-
-            cursor.execute(f'''
-        select a.id, count(a.id)
-        from "Artists" a join show_items s on a.id = s.artist_id where s.artist_id in ({list_of_ids}) and s.start_time >= '{date.today()}'
-        group by a.id
-        ''')
-
-            show_count = cursor.fetchall()
-
-            dict = {}
-
-            for id, count in show_count:
-                dict[id] = count
+            for artist in artists:
+                data.append({
+                    "id": artist.id,
+                    "name": artist.name,
+                    "num_upcoming_shows": len(artist.shows)
+                })
 
             response = {
                 "count": count,
-                "data": [{
-                    "id": item.id,
-                    "name": item.name,
-                    "num_upcoming_shows": dict[item.id] if item.id in dict else 0
-                } for item in artists]
+                "data": data
             }
 
     except BaseException:
         flash(
             f'An error occured, could not search with {partial_name} was not successfully!')
         print(sys.exc_info())
-    finally:
-        connection.close()
 
     return render_template('pages/search_artists.html',
                            results=response, search_term=partial_name)
@@ -117,31 +97,31 @@ def show_artist(artist_id):
             "image_link": artist.image_link,
         }
 
-        cursor.execute(f'''
-      select v.id, v.name, v.image_link, s.start_time
-      from "Venues" v join show_items s on v.id = s.venue_id where s.artist_id = {artist_id} and s.start_time < '{date.today()}'
-      ''')
+        upcoming_shows = []
+        past_shows = []
+        all_shows = db.session.query(Venue, Show).join(Show).filter(Show.artist_id == artist_id).all()
 
-        past_shows = cursor.fetchall()
-        data['past_shows'] = [{"venue_id": id,
-                               "venue_name": name,
-                               "venue_image_link": image_link,
-                               "start_time": start_time} for id, name, image_link, start_time in past_shows]
-        data['past_shows_count'] = len(data['past_shows'])
+        for venue, show in all_shows:
+            if datetime.date(show.start_time) >= date.today():
+                upcoming_shows.append({
+                    "venue_id": venue.id,
+                    "venue_name": venue.name,
+                    "venue_image_link": venue.image_link,
+                    "start_time": show.start_time
+                })
+            else:
+                past_shows.append({
+                    "venue_id": venue.id,
+                    "venue_name": venue.name,
+                    "venue_image_link": venue.image_link,
+                    "start_time": show.start_time
+                })
 
-        cursor.execute(f'''
-      select v.id, v.name, v.image_link, s.start_time
-      from "Venues" v join show_items s on v.id = s.venue_id where s.artist_id = {artist_id} and s.start_time >= '{date.today()}'
-      ''')
+        data['past_shows'] = past_shows
+        data['past_shows_count'] = len(past_shows)  
 
-        upcoming_shows = cursor.fetchall()
-        print('upcoming_shows', upcoming_shows)
-        data['upcoming_shows'] = [{"venue_id": id,
-                                   "venue_name": name,
-                                   "venue_image_link": image_link,
-                                   "start_time": start_time} for id, name, image_link, start_time in upcoming_shows]
-        data['upcoming_shows_count'] = len(data['upcoming_shows'])
-        print('data', data)
+        data['upcoming_shows'] = upcoming_shows
+        data['upcoming_shows_count'] = len(upcoming_shows)
     except BaseException:
         flash(f'Details for venue: {artist_id} was not successfully fetched!')
         print(sys.exc_info())
