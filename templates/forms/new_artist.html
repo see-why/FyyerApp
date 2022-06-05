@@ -3,6 +3,7 @@
 {% block content %}
   <div class="form-wrapper">
     <form method="post" class="form">
+      {{ form.csrf_token }}
       <h3 class="form-heading">List a new artist</h3>
       <div class="form-group">
         <label for="name">Name</label>
@@ -20,10 +21,18 @@
           </div>
       </div>
       <div class="form-group">
+          {% for error in form.phone.errors %}
+            <small class="text-danger">{{ error }}</small>  
+            <br>
+          {% endfor %}
           <label for="phone">Phone</label>
           {{ form.phone(class_ = 'form-control', placeholder='xxx-xxx-xxxx', autofocus = true) }}
         </div>
       <div class="form-group">
+        {% for error in form.genres.errors %}
+          <small class="text-danger">{{ error }}</small>  
+          <br>
+        {% endfor %}
         <label for="genres">Genres</label>
         <small>Ctrl+Click to select multiple</small>
         {{ form.genres(class_ = 'form-control', placeholder='Genres, separated by commas', autofocus = true) }}
