@@ -188,10 +188,15 @@ def create_venue_submission():
     try:
         form = VenueForm()
 
+        if form.validate_on_submit():
+            print("Form Valid")
+        else:
+            return render_template('forms/new_venue.html', form=form)
+
         existing_venue = Venue.query.filter(
             Venue.name.ilike(f'%{form.name.data}%')).all()
         if len(existing_venue) > 0:
-            flash('Venue ' + request.form['name'] + ' already exists!')
+            form.name.errors.append('Venue name ' + request.form['name'] + ' already exists!')
             return render_template('forms/new_venue.html', form=form)
 
         genres = ",".join(form.genres.data)
@@ -216,7 +221,8 @@ def create_venue_submission():
         print(sys.exc_info())
     finally:
         db.session.close()
-    return render_template('pages/home.html')
+    return redirect(
+        url_for('index'))
 
 
 @venue_blueprint.route('/venues/<venue_id>', methods=['DELETE'])
@@ -247,7 +253,7 @@ def edit_venue(venue_id):
     try:
         venue = Venue.query.get(venue_id)
 
-        form.name.id = venue.name
+        form.name.data = venue.name
         form.genres.data = venue.genres.split(',')
         form.address.data = venue.address
         form.city.data = venue.city
@@ -270,11 +276,17 @@ def edit_venue_submission(venue_id):
         venue = Venue.query.get(venue_id)
         form = VenueForm()
 
+        if form.validate_on_submit():
+            print("Form Valid")
+        else:
+            return render_template(
+                'forms/edit_venue.html', form=form, venue=venue)
+
         existing_venue = Venue.query.filter(
             Venue.name.ilike(f'%{form.name.data}%')).all()
         if len(existing_venue) > 0 and form.name.data.lower() != venue.name.lower():
             print(form.name.data.lower(), venue.name.lower())
-            flash('Venue ' + request.form['name'] + ' already exists!')
+            form.name.errors.append('Venue name ' + request.form['name'] + ' already exists!')
             return render_template(
                 'forms/edit_venue.html', form=form, venue=venue)
 
@@ -301,4 +313,4 @@ def edit_venue_submission(venue_id):
     finally:
         db.session.close()
     # venue record with ID <venue_id> using the new attributes
-    return redirect(url_for('show_venue', venue_id=venue_id))
+    return redirect(url_for('venue_blueprint.show_venue', venue_id=venue_id))

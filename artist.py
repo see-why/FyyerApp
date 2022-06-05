@@ -154,6 +154,7 @@ def show_artist(artist_id):
 @artist_blueprint.route('/artists/<int:artist_id>/edit', methods=['GET'])
 def edit_artist(artist_id):
     form = ArtistForm()
+
     try:
         artist = Artist.query.get(artist_id)
 
@@ -178,6 +179,12 @@ def edit_artist(artist_id):
 @artist_blueprint.route('/artists/<int:artist_id>/edit', methods=['POST'])
 def edit_artist_submission(artist_id):
     form = ArtistForm()
+    if form.validate_on_submit():
+            print("Form Valid")
+    else:
+            return render_template(
+                'forms/edit_artist.html', form=form, artist=artist)
+
     try:
         artist = Artist.query.get(artist_id)
 
@@ -186,7 +193,7 @@ def edit_artist_submission(artist_id):
         if len(existing_artist) > 0 and form.name.data.lower(
         ) != artist.name.lower():
             print(form.name.data.lower(), artist.name.lower())
-            flash('Artist ' + request.form['name'] + ' already exists!')
+            form.name.errors.append('Artist name ' + request.form['name'] + ' already exists!')
             return render_template(
                 'forms/edit_artist.html', form=form, artist=artist)
 
@@ -219,6 +226,7 @@ def edit_artist_submission(artist_id):
 @artist_blueprint.route('/artists/create', methods=['GET'])
 def create_artist_form():
     form = ArtistForm()
+
     return render_template('forms/new_artist.html', form=form)
 
 
@@ -228,10 +236,15 @@ def create_artist_submission():
     try:
         form = ArtistForm()
 
+        if form.validate_on_submit():
+            print("Form Valid")
+        else:
+            return render_template('forms/new_artist.html', form=form)
+
         existing_artist = Artist.query.filter(
             Artist.name.ilike(f'%{form.name.data}%')).all()
         if len(existing_artist) > 0:
-            flash('Artist ' + request.form['name'] + ' already exists!')
+            form.name.errors.append('Artist name ' + request.form['name'] + ' already exists!')
             return render_template('forms/new_artist.html', form=form)
 
         genres = ",".join(form.genres.data)
@@ -257,7 +270,8 @@ def create_artist_submission():
     finally:
         db.session.close()
 
-    return render_template('pages/home.html')
+    return redirect(
+        url_for('index'))
 
 
 @artist_blueprint.route('/artists/<artist_id>', methods=['DELETE'])
