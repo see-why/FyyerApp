@@ -2,17 +2,20 @@ from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
+
 class Show(db.Model):
-  __tablename__ = 'show_items'
-  id = db.Column(db.Integer, primary_key=True)
-  artist_id = db.Column(db.Integer, db.ForeignKey(
-      'Artists.id'), nullable=False)
-  venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=False)
-  start_time = db.Column(db.DateTime, nullable=False)
+    __tablename__ = 'show_items'
+    id = db.Column(db.Integer, primary_key=True)
+    artist_id = db.Column(db.Integer, db.ForeignKey(
+        'Artists.id'), nullable=False)
+    venue_id = db.Column(
+        db.Integer,
+        db.ForeignKey('Venues.id'),
+        nullable=False)
+    start_time = db.Column(db.DateTime, nullable=False)
 
-  def __repr__(self):
-      return f'Show artist_id: {self.artist_id} venue_id: {self.venue_id}'
-
+    def __repr__(self):
+        return f'Show artist_id: {self.artist_id} venue_id: {self.venue_id}'
 
 
 class Venue(db.Model):

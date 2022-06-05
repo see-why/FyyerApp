@@ -8,7 +8,7 @@ from flask import (
     url_for
 )
 from datetime import date
-from model import Artist, db, Show,  Venue
+from model import Artist, db, Show, Venue
 import sys
 import psycopg2
 from forms import *
@@ -99,7 +99,9 @@ def show_artist(artist_id):
 
         upcoming_shows = []
         past_shows = []
-        all_shows = db.session.query(Venue, Show).join(Show).filter(Show.artist_id == artist_id).all()
+        all_shows = db.session.query(
+            Venue, Show).join(Show).filter(
+            Show.artist_id == artist_id).all()
 
         for venue, show in all_shows:
             if datetime.date(show.start_time) >= date.today():
@@ -118,7 +120,7 @@ def show_artist(artist_id):
                 })
 
         data['past_shows'] = past_shows
-        data['past_shows_count'] = len(past_shows)  
+        data['past_shows_count'] = len(past_shows)
 
         data['upcoming_shows'] = upcoming_shows
         data['upcoming_shows_count'] = len(upcoming_shows)
@@ -160,10 +162,10 @@ def edit_artist(artist_id):
 def edit_artist_submission(artist_id):
     form = ArtistForm()
     if form.validate_on_submit():
-            print("Form Valid")
+        print("Form Valid")
     else:
-            return render_template(
-                'forms/edit_artist.html', form=form, artist=artist)
+        return render_template(
+            'forms/edit_artist.html', form=form, artist=artist)
 
     try:
         artist = Artist.query.get(artist_id)
@@ -173,7 +175,10 @@ def edit_artist_submission(artist_id):
         if len(existing_artist) > 0 and form.name.data.lower(
         ) != artist.name.lower():
             print(form.name.data.lower(), artist.name.lower())
-            form.name.errors.append('Artist name ' + request.form['name'] + ' already exists!')
+            form.name.errors.append(
+                'Artist name ' +
+                request.form['name'] +
+                ' already exists!')
             return render_template(
                 'forms/edit_artist.html', form=form, artist=artist)
 
@@ -224,7 +229,10 @@ def create_artist_submission():
         existing_artist = Artist.query.filter(
             Artist.name.ilike(f'%{form.name.data}%')).all()
         if len(existing_artist) > 0:
-            form.name.errors.append('Artist name ' + request.form['name'] + ' already exists!')
+            form.name.errors.append(
+                'Artist name ' +
+                request.form['name'] +
+                ' already exists!')
             return render_template('forms/new_artist.html', form=form)
 
         genres = ",".join(form.genres.data)

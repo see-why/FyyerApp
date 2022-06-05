@@ -20,20 +20,21 @@ show_blueprint = Blueprint('show_blueprint', __name__)
 def shows():
     # displays list of shows at /shows
     try:
-        data = []     
+        data = []
 
-        stmt = db.session.query(Show, Venue, Artist).select_from(Show).join(Venue).join(Artist).all()
+        stmt = db.session.query(Show, Venue, Artist).select_from(
+            Show).join(Venue).join(Artist).all()
 
         for show, venue, artist in stmt:
-           data.append({
+            data.append({
                 "venue_id": venue.id,
                 "venue_name": venue.name,
                 "artist_id": artist.id,
                 "artist_name": artist.name,
                 "artist_image_link": artist.image_link,
                 "start_time": show.start_time
-           })
-        
+            })
+
     except BaseException:
         flash(f'An error occured, could not get all shows successfully!')
         print(sys.exc_info())
@@ -72,7 +73,10 @@ def create_show_submission():
         artist_id = form.artist_id.data
         start_time = form.start_time.data
 
-        show = Show(venue_id=venue_id, artist_id=artist_id, start_time=start_time)
+        show = Show(
+            venue_id=venue_id,
+            artist_id=artist_id,
+            start_time=start_time)
 
         db.session.add(show)
         db.session.commit()

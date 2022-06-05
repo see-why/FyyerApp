@@ -131,7 +131,6 @@ class VenueForm(Form):
     )
 
 
-
 class ArtistForm(Form):
     name = StringField(
         'name', validators=[DataRequired()]

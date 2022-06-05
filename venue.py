@@ -27,14 +27,26 @@ def venues():
     # num_upcoming_shows should be aggregated based on number of upcoming
     # shows per venue.
     try:
-        
+
         data = []
         results = {}
 
-        result = db.session.query(Venue.city, Venue.state, Venue.name, Venue.id, func.count(Venue.id)).outerjoin(Show, Venue.id == Show.venue_id).group_by(Venue.city, Venue.state, Venue.name,Venue.id).all()
+        result = db.session.query(
+            Venue.city,
+            Venue.state,
+            Venue.name,
+            Venue.id,
+            func.count(
+                Venue.id)).outerjoin(
+            Show,
+            Venue.id == Show.venue_id).group_by(
+                Venue.city,
+                Venue.state,
+                Venue.name,
+            Venue.id).all()
 
         for venues_data in result:
-            (city, state, name, id, show_count)  = venues_data
+            (city, state, name, id, show_count) = venues_data
             location = (city, state)
             if location not in results:
                 results[location] = []
@@ -67,7 +79,7 @@ def search_venues():
             Venue.name.ilike(f'%{partial_name}%')).all()
         count = len(venues)
 
-        if count > 0: 
+        if count > 0:
             for venue in venues:
                 data.append({
                     "id": venue.id,
@@ -113,8 +125,10 @@ def show_venue(venue_id):
 
         upcoming_shows = []
         past_shows = []
-        all_shows = db.session.query(Artist, Show).join(Show).filter(Show.venue_id == venue_id).all()
-        
+        all_shows = db.session.query(
+            Artist, Show).join(Show).filter(
+            Show.venue_id == venue_id).all()
+
         for artist, show in all_shows:
             if datetime.date(show.start_time) >= date.today():
                 upcoming_shows.append({
@@ -130,10 +144,9 @@ def show_venue(venue_id):
                     "artist_image_link": artist.image_link,
                     "start_time": show.start_time
                 })
-        
+
         data['past_shows'] = past_shows
         data['past_shows_count'] = len(data['past_shows'])
-
 
         data['upcoming_shows'] = upcoming_shows
         data['upcoming_shows_count'] = len(data['upcoming_shows'])
@@ -166,7 +179,10 @@ def create_venue_submission():
         existing_venue = Venue.query.filter(
             Venue.name.ilike(f'%{form.name.data}%')).all()
         if len(existing_venue) > 0:
-            form.name.errors.append('Venue name ' + request.form['name'] + ' already exists!')
+            form.name.errors.append(
+                'Venue name ' +
+                request.form['name'] +
+                ' already exists!')
             return render_template('forms/new_venue.html', form=form)
 
         genres = ",".join(form.genres.data)
@@ -255,7 +271,10 @@ def edit_venue_submission(venue_id):
         existing_venue = Venue.query.filter(
             Venue.name.ilike(f'%{form.name.data}%')).all()
         if len(existing_venue) > 0 and form.name.data.lower() != venue.name.lower():
-            form.name.errors.append('Venue name ' + request.form['name'] + ' already exists!')
+            form.name.errors.append(
+                'Venue name ' +
+                request.form['name'] +
+                ' already exists!')
             return render_template(
                 'forms/edit_venue.html', form=form, venue=venue)
 
